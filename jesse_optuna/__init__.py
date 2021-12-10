@@ -3,7 +3,6 @@ import os
 import pathlib
 import pickle
 import shutil
-import traceback
 
 import click
 import jesse.helpers as jh
