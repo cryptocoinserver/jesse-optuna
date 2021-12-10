@@ -14,7 +14,8 @@ class JoblibStudy:
         study_parameters["study_name"] = self.study.study_name
         study_parameters["load_if_exists"] = True
         study = optuna.create_study(**study_parameters)
-        study.optimize(func, n_trials=n_trials, **optimize_parameters)
+        study.optimize(func, n_trials=n_trials, **optimize_parameters, catch=(Exception,))
+
 
     @staticmethod
     def _split_trials(n_trials, n_jobs):

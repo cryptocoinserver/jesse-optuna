@@ -15,17 +15,10 @@ from jesse.research import backtest, get_candles
 from .JoblilbStudy import JoblibStudy
 
 
-def start_logger_if_necessary():
-    logger = logging.getLogger("mylogger")
-    if len(logger.handlers) == 0:
-        logger.setLevel(logging.ERROR)
-        sh = logging.StreamHandler()
-        sh.setFormatter(logging.Formatter("%(asctime)s %(levelname)-8s %(message)s"))
-        fh = logging.FileHandler('optuna.log', mode='w')
-        fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)-8s %(message)s"))
-        logger.addHandler(sh)
-        logger.addHandler(fh)
-    return logger
+logger = logging.getLogger()
+logger.addHandler(logging.FileHandler("optuna.log", mode="w"))
+
+optuna.logging.enable_propagation()
 
 # create a Click group
 @click.group()
@@ -75,6 +68,10 @@ def run() -> None:
 
     sampler = optuna.samplers.NSGAIISampler(population_size=cfg['population_size'], mutation_prob=cfg['mutation_prob'],
                                             crossover_prob=cfg['crossover_prob'], swapping_prob=cfg['swapping_prob'])
+
+    optuna.logging.enable_propagation()
+    optuna.logging.disable_default_handler()
+
     try:
         study = JoblibStudy(study_name=study_name, direction="maximize", sampler=sampler,
                                     storage=storage, load_if_exists=False)
@@ -132,8 +129,14 @@ def objective(trial):
         else:
             raise TypeError('Only int, bool and float types are implemented for strategy parameters.')
 
-    training_data_metrics = backtest_function(cfg['timespan-train']['start_date'], cfg['timespan-train']['finish_date'],
-                                              trial.params, cfg)
+    try:
+        training_data_metrics = backtest_function(cfg['timespan-train']['start_date'],
+                                                  cfg['timespan-train']['finish_date'],
+                                                  trial.params, cfg)
+    except Exception as err:
+        logger.critical(f"Error: {err}")
+        raise err
+
 
     if training_data_metrics is None:
         return np.nan
@@ -174,16 +177,31 @@ def objective(trial):
 
     score = total_effect_rate * ratio_normalized
 
-    testing_data_metrics = backtest_function(cfg['timespan-testing']['start_date'],
-                                             cfg['timespan-testing']['finish_date'], trial.params, cfg)
+    try:
+        testing_data_metrics = backtest_function(cfg['timespan-testing']['start_date'], cfg['timespan-testing']['finish_date'], trial.params, cfg)
+    except Exception as err:
+        logger.critical(f"Error: {err}")
+        raise err
 
     if testing_data_metrics is None:
         return np.nan
 
     for key, value in testing_data_metrics.items():
+        if isinstance(value, np.integer):
+            value = int(value)
+        elif isinstance(value, np.floating):
+            value = float(value)
+        elif isinstance(value, np.ndarray):
+            value = value.tolist()
         trial.set_user_attr(f"testing-{key}", value)
 
     for key, value in training_data_metrics.items():
+        if isinstance(value, np.integer):
+            value = int(value)
+        elif isinstance(value, np.floating):
+            value = float(value)
+        elif isinstance(value, np.ndarray):
+            value = value.tolist()
         trial.set_user_attr(f"training-{key}", value)
     return score
 
@@ -260,14 +278,8 @@ def backtest_function(start_date, finish_date, hp, cfg):
         'warm_up_candles': cfg['warm_up_candles']
     }
 
-    try:
-        backtest_data = backtest(config, route, extra_routes, candles, True, hp)
-    except Exception as e:
-        logger = start_logger_if_necessary()
-        logger.error("".join(traceback.TracebackException.from_exception(e).format()))
-        # Re-raise the original exception so the Pool worker can
-        # clean up
-        return None
+
+    backtest_data = backtest(config, route, extra_routes, candles, True, hp)
 
     if backtest_data['total'] == 0:
         backtest_data = {'total': 0, 'total_winning_trades': None, 'total_losing_trades': None,
