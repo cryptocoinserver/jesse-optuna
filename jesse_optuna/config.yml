@@ -1,0 +1,49 @@
+# sharpe, calmar, sortino, omega, serenity, smart sharpe, smart sortino
+fitness-ratio: 'smart sharpe'
+optimal-total: 100
+# single / multi
+mode: single
+n_trials: 1000
+
+# -1 all cpu
+n_jobs: -1
+
+population_size: 300
+mutation_prob: 0.0333
+crossover_prob: 0.6
+swapping_prob: 0.05
+
+strategy_name: 'Test'
+
+starting_balance: 5000
+fee: 0.001
+futures_leverage: 1
+futures_leverage_mode: cross
+settlement_currency: USDT
+warm_up_candles: 240
+exchange: Binance
+symbol: 'BTC-USDT'
+timeframe: '1h'
+
+timespan-train:
+  start_date: '2020-01-01'
+  finish_date: '2021-01-01'
+timespan-testing:
+  start_date: '2021-01-01'
+  finish_date: '2021-11-01'
+
+extra_routes:
+  0:
+    exchange: 'Binance'
+    symbol: 'BTC-USDT'
+    timeframe: '1D'
+  1:
+    exchange: 'Binance'
+    symbol: 'BNB-USDT'
+    timeframe: '1D'
+
+postgres_host: 'postgres'
+postgres_db_name: 'optuna_db'
+postgres_port: 5432
+postgres_username: 'jesse_user'
+postgres_password: 'password'
