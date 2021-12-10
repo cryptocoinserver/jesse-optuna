@@ -12,10 +12,20 @@ import optuna
 import pkg_resources
 import yaml
 from jesse.research import backtest, get_candles
+from .JoblilbStudy import JoblibStudy
 
 
-logging.basicConfig(filename='log.txt', level=logging.ERROR, filemode='w')
-
+def start_logger_if_necessary():
+    logger = logging.getLogger("mylogger")
+    if len(logger.handlers) == 0:
+        logger.setLevel(logging.ERROR)
+        sh = logging.StreamHandler()
+        sh.setFormatter(logging.Formatter("%(asctime)s %(levelname)-8s %(message)s"))
+        fh = logging.FileHandler('optuna.log', mode='w')
+        fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)-8s %(message)s"))
+        logger.addHandler(sh)
+        logger.addHandler(fh)
+    return logger
 
 # create a Click group
 @click.group()
@@ -66,15 +76,15 @@ def run() -> None:
     sampler = optuna.samplers.NSGAIISampler(population_size=cfg['population_size'], mutation_prob=cfg['mutation_prob'],
                                             crossover_prob=cfg['crossover_prob'], swapping_prob=cfg['swapping_prob'])
     try:
-        study = optuna.create_study(study_name=study_name, direction="maximize", sampler=sampler,
+        study = JoblibStudy(study_name=study_name, direction="maximize", sampler=sampler,
                                     storage=storage, load_if_exists=False)
     except optuna.exceptions.DuplicatedStudyError:
         if click.confirm('Previous study detected. Do you want to resume?', default=True):
-            study = optuna.create_study(study_name=study_name, direction="maximize", sampler=sampler,
+            study = JoblibStudy(study_name=study_name, direction="maximize", sampler=sampler,
                                         storage=storage, load_if_exists=True)
         elif click.confirm('Delete previous study and start new?', default=False):
             optuna.delete_study(study_name=study_name, storage=storage)
-            study = optuna.create_study(study_name=study_name, direction="maximize", sampler=sampler,
+            study = JoblibStudy(study_name=study_name, direction="maximize", sampler=sampler,
                                         storage=storage, load_if_exists=False)
         else:
             print("Exiting.")
@@ -84,6 +94,7 @@ def run() -> None:
     study.set_user_attr("exchange", cfg['exchange'])
     study.set_user_attr("symbol", cfg['symbol'])
     study.set_user_attr("timeframe", cfg['timeframe'])
+
 
     study.optimize(objective, n_jobs=cfg['n_jobs'], n_trials=cfg['n_trials'])
 
@@ -124,7 +135,7 @@ def objective(trial):
     training_data_metrics = backtest_function(cfg['timespan-train']['start_date'], cfg['timespan-train']['finish_date'],
                                               trial.params, cfg)
 
-    if np.isnan(training_data_metrics):
+    if training_data_metrics is None:
         return np.nan
 
 
@@ -166,7 +177,7 @@ def objective(trial):
     testing_data_metrics = backtest_function(cfg['timespan-testing']['start_date'],
                                              cfg['timespan-testing']['finish_date'], trial.params, cfg)
 
-    if np.isnan(testing_data_metrics):
+    if testing_data_metrics is None:
         return np.nan
 
     for key, value in testing_data_metrics.items():
@@ -252,10 +263,11 @@ def backtest_function(start_date, finish_date, hp, cfg):
     try:
         backtest_data = backtest(config, route, extra_routes, candles, True, hp)
     except Exception as e:
-        logging.error("".join(traceback.TracebackException.from_exception(e).format()))
+        logger = start_logger_if_necessary()
+        logger.error("".join(traceback.TracebackException.from_exception(e).format()))
         # Re-raise the original exception so the Pool worker can
         # clean up
-        return np.nan
+        return None
 
     if backtest_data['total'] == 0:
         backtest_data = {'total': 0, 'total_winning_trades': None, 'total_losing_trades': None,
