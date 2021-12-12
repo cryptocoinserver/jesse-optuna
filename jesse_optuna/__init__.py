@@ -32,7 +32,7 @@ def create_config() -> None:
     validate_cwd()
     target_dirname = pathlib.Path().resolve()
     package_dir = pathlib.Path(__file__).resolve().parent
-    shutil.copy2(f'{package_dir}/config.yml', f'{target_dirname}/config.yml')
+    shutil.copy2(f'{package_dir}/optuna_config.yml', f'{target_dirname}/optuna_config.yml')
 
 @cli.command()
 @click.argument('db_name', required=True, type=str)
@@ -97,13 +97,13 @@ def run() -> None:
 
 
 def get_config():
-    cfg_file = pathlib.Path('config.yml')
+    cfg_file = pathlib.Path('optuna_config.yml')
 
     if not cfg_file.is_file():
-        print("config.yml not found. Run create-config command.")
+        print("optuna_config.yml not found. Run create-config command.")
         exit()
     else:
-        with open("config.yml", "r") as ymlfile:
+        with open("optuna_config.yml", "r") as ymlfile:
             cfg = yaml.load(ymlfile, yaml.SafeLoader)
 
     return cfg
