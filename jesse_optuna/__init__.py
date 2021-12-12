@@ -16,7 +16,7 @@ from .JoblilbStudy import JoblibStudy
 
 
 logger = logging.getLogger()
-logger.addHandler(logging.FileHandler("optuna.log", mode="w"))
+logger.addHandler(logging.FileHandler("jesse-optuna.log", mode="w"))
 
 optuna.logging.enable_propagation()
 
