@@ -3,6 +3,7 @@ import os
 import pathlib
 import pickle
 import shutil
+import traceback
 
 import click
 import jesse.helpers as jh
@@ -133,7 +134,7 @@ def objective(trial):
                                                   cfg['timespan-train']['finish_date'],
                                                   trial.params, cfg)
     except Exception as err:
-        logger.critical(f"Error: {err}")
+        logger.error("".join(traceback.TracebackException.from_exception(err).format()))
         raise err
 
 
@@ -179,7 +180,7 @@ def objective(trial):
     try:
         testing_data_metrics = backtest_function(cfg['timespan-testing']['start_date'], cfg['timespan-testing']['finish_date'], trial.params, cfg)
     except Exception as err:
-        logger.critical(f"Error: {err}")
+        logger.error("".join(traceback.TracebackException.from_exception(err).format()))
         raise err
 
     if testing_data_metrics is None:
