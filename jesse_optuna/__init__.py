@@ -239,7 +239,7 @@ def backtest_function(start_date, finish_date, hp, cfg):
 
     candles = {}
     extra_routes = []
-    if len(extra_routes) != 0:
+    if len(cfg['extra_routes']) != 0:
         for extra_route in cfg['extra_routes'].items():
             extra_route = extra_route[1]
             candles[jh.key(extra_route['exchange'], extra_route['symbol'])] = {
