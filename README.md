@@ -3,7 +3,7 @@
 Only works with the new GUI version of jesse.
 Use optuna directly to work with the results and create [visualisations](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/005_visualization.html) of the results. Jupyter Notebook might be usefull here.
 
-You need the study name and storage to load it for that:
+You need the study name and storage, which you set in the config.yml, to load it for that:
 
 ```
     study_name = f"{cfg['strategy_name']}-{cfg['exchange']}-{cfg['symbol']}-{cfg['timeframe']}"
