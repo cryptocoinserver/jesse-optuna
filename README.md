@@ -1,6 +1,8 @@
 # Jesse optuna
 
-Only works with the dashboard version / branch of jesse.
+Only works with the new GUI version of jesse.
+It will create a CSV with the parameter set, training metrics and testing metrics. 
+You can use that CSV for further evaluation. For example you might want to filter parameter sets where the testing metrics are too low / sort by best testing score etc.
 
 The config.yml should be self-explainatory.
 
