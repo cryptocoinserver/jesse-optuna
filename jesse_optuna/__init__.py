@@ -279,7 +279,7 @@ def backtest_function(start_date, finish_date, hp, cfg):
     }
 
 
-    backtest_data = backtest(config, route, extra_routes, candles, hp)['metrics']
+    backtest_data = backtest(config, route, extra_routes, candles, hyperparameters = hp)['metrics']
 
     if backtest_data['total'] == 0:
         backtest_data = {'total': 0, 'total_winning_trades': None, 'total_losing_trades': None,
